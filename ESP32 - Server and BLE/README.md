@@ -9,7 +9,7 @@ The ESP32 is configured to advertise itself and provide a custom **GATT service*
 - The server also supports periodic notifications (uptime), and echoes back any text received.
 
 ## Live Simulation
-🔗 [Run the project on Wokwi](https://wokwi.com/projects/442017683177817089)
+[Run the project on Wokwi](https://wokwi.com/projects/442017683177817089)
 
 <img width="260" height="428" alt="ESP3222" src="https://github.com/user-attachments/assets/50676a81-9899-49e4-bbf2-8c2a27ca0c95" />
 
