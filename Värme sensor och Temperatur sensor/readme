@@ -3,7 +3,7 @@
 
 Detta projekt visar hur man mäter **temperatur och luftfuktighet** med en **DHT22-sensor** och visar värdena på en **LCD 16x2 med I²C-adapter**.
 
-<img width="909" height="584" alt="värmesensor build" src="https://github.com/user-attachments/assets/d4a7107c-d58c-4ee8-b6a0-840b03d5bdeb" />
+
 
 
 ## Hårdvara
