@@ -34,6 +34,6 @@ The code uses the following libraries:
 - `Adafruit Unified Sensor`  
 - `Adafruit DHT sensor library`  
 - `LiquidCrystal I2C`
-
+```
 For more information about this project, you will find it here
 https://wokwi.com/projects/441919864818625537
