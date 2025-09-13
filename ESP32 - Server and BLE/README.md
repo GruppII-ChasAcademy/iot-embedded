@@ -6,7 +6,9 @@ The ESP32 is configured to advertise itself and provide a custom **GATT service*
 - **Device Name**: `GroupII chas advanced`  
 - **RX Characteristic**: Allows a BLE central (like a smartphone app) to send data to the ESP32.  
 - **TX Characteristic**: The ESP32 can notify and send data back to the central device.  
-- The server also supports periodic notifications (uptime), and echoes back any text received.
+- The server also supports periodic notifications (uptime), and echoes back any text received.  
+
+ **Note:** The server implementation is still a work in progress. More features and stability improvements are being added.
 
 ## Live Simulation
 [Run the project on Wokwi](https://wokwi.com/projects/442017683177817089)
@@ -23,4 +25,3 @@ The ESP32 is configured to advertise itself and provide a custom **GATT service*
   #include <BLEServer.h>
   #include <BLEUtils.h>
   #include <BLE2902.h>
-
