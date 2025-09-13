@@ -1,4 +1,4 @@
- IoT GruppII Climate Monitor
+# IoT GruppII Climate Monitor
 
 The **IoT GruppII Climate Monitor** is an IoT-based project designed to measure and monitor environmental conditions.  
 It combines a **temperature and humidity sensor** with an **ESP32 server** that can process and share data with other devices or cloud services.  
