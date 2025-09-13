@@ -2,7 +2,8 @@
 
 This project demonstrates how to measure **temperature and humidity** using a **DHT22 sensor** and display the values on a **16x2 LCD with I²C adapter**.
 
-![Wiring diagram](https://wokwi.com/projects/441919864818625537)
+
+<img width="738" height="489" alt="sfwrwwrgw" src="https://github.com/user-attachments/assets/d458e629-fb01-446b-8a1d-8e990f0b187a" />
 
 
 ## Hardware
