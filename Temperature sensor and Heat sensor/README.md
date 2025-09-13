@@ -31,9 +31,10 @@ This project demonstrates how to measure **temperature and humidity** using a **
 ## Code
 The code uses the following libraries:
 ```cpp
-- `Adafruit Unified Sensor`  
-- `Adafruit DHT sensor library`  
-- `LiquidCrystal I2C`
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
 ```
 For more information about this project, you will find it here
 https://wokwi.com/projects/441919864818625537
