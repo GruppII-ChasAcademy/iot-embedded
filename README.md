@@ -1,33 +1,35 @@
-# iot-embedded
+IoT GruppII Climate Monitor
 
-# Temperatur- och Luftfuktighetssensor (Arduino UNO R4 WiFi)
+The IoT GruppII Climate Monitor is an IoT-based project designed to measure and monitor environmental conditions. It combines a temperature and humidity sensor with an ESP32 server that can process and share data with other devices or cloud services. The system is lightweight, scalable, and can be simulated in Wokwi before being deployed to real hardware.
 
-Detta projekt visar hur man mäter **temperatur och luftfuktighet** med en **DHT22-sensor** och visar värdena på en **LCD 16x2 med I²C-adapter**.
+This repository contains the firmware for both the sensor node and the ESP32 server, written in C++ and built using PlatformIO.
 
-<img width="909" height="584" alt="värmesensor build" src="https://github.com/user-attachments/assets/d4a7107c-d58c-4ee8-b6a0-840b03d5bdeb" />
+Features
 
+Real-Time Sensing – Measures ambient temperature (°C) and humidity (%) using the DHT22 sensor.
 
-## Hårdvara
-- Arduino UNO R4 WiFi
-- DHT22 (kopplad till digital pin D7)
-- LCD 16x2 med I²C-adapter (SDA=A4, SCL=A5)
-- Dupont-kablar
+LCD Display – Live readings shown on a 16x2 I2C LCD module.
 
-## Kopplingar
-- **DHT22**
-  - VCC → 5V
-  - DATA → D7
-  - GND → GND
-- **LCD I²C**
-  - VCC → 5V
-  - GND → GND
-  - SDA → A4
-  - SCL → A5
+ESP32 Server – Acts as a hub to receive and forward sensor data via Wi-Fi.
 
-## Kod
-Koden använder följande bibliotek:
-- `Adafruit Unified Sensor`
-- `Adafruit DHT sensor library`
-- `LiquidCrystal I2C`
-- 
-# ESP32 SERVER (Waveshare ESP32-S3-Zero ESP32-S3 512024) "Under arbete"
+Serial Debugging – Outputs sensor values and server logs for developers.
+
+Wokwi Simulation – Entire project can be tested virtually before deployment.
+
+Future Extensions – Low-power design, MQTT integration, and cloud dashboards.
+
+Hardware Requirements
+Component	Description
+Arduino UNO R4 WiFi / ESP32-S3	Microcontroller boards used in this project
+DHT22 Sensor	Temperature & humidity measurement
+LCD 16x2 with I2C module	Displays readings
+Waveshare ESP32-S3-Zero	Used as server for communication
+Breadboard + Jumper Wires	Circuit prototyping
+Power Supply	USB or LiPo battery
+Use Cases
+
+Local weather station for small-scale environments.
+
+IoT learning prototype for embedded systems.
+
+Gateway for collecting and forwarding sensor data to a backend or mobile app.
