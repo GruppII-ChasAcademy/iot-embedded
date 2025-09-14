@@ -16,7 +16,7 @@ This project demonstrates how to measure **temperature and humidity** using a **
 
 ## Wiring
 - **DHT22**  
-  - VCC → 5V  
+  - VCC → 3.3V  
   - DATA → D7  
   - GND → GND  
 
