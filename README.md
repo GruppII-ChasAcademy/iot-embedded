@@ -7,7 +7,7 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 
 ##  System Overview  
 
-- **Sensor Nodes (S)** inside cargo measure temperature & humidity.  
+- **Sensor Nodes (S)** powered by **Arduino UNO R4 WiFi** inside the cargo measure temperature & humidity.  
 - **ESP32 Broker (C)** inside the vehicle collects sensor data via **WiFi or Bluetooth**.  
 - **Mobile Unit (M)** forwards data to the **Web Server (W)** over **4G/5G**.  
 - **GPS** provides continuous location tracking.  
@@ -57,7 +57,8 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 ---
 
 ## Tech Stack  
-- **ESP32-S3 / Arduino UNO R4 WiFi** – sensor & gateway layers  
+- **Arduino UNO R4 WiFi** – used as **sensor node** (temperature & humidity)  
+- **ESP32-S3** – used as **BLE/WiFi gateway & broker** for collecting sensor data  
 - **DHT22** – temperature and humidity sensing  
 - **LCD 16x2 (I²C)** – real-time display  
 - **Wokwi** – simulation of entire system  
