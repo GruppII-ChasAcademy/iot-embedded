@@ -1,4 +1,4 @@
-# ESP32 BLE Server Project
+# ESP32 BLE 
 
 This project demonstrates how to use the **ESP32** as a **Bluetooth Low Energy (BLE) server**.  
 The ESP32 is configured to advertise itself and provide a custom **GATT service** with RX (write) and TX (notify/read) characteristics.
@@ -7,8 +7,6 @@ The ESP32 is configured to advertise itself and provide a custom **GATT service*
 - **RX Characteristic**: Allows a BLE central (like a smartphone app) to send data to the ESP32.  
 - **TX Characteristic**: The ESP32 can notify and send data back to the central device.  
 - The server also supports periodic notifications (uptime), and echoes back any text received.  
-
- **Note:** The server implementation is still a work in progress. More features and stability improvements are being added.
 
 ## Live Simulation
 [Run the project on Wokwi](https://wokwi.com/projects/442017683177817089)
