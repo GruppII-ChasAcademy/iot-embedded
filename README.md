@@ -6,7 +6,6 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 ---
 
 ##  System Overview  
-![System Architecture]
 
 - **Sensor Nodes (S)** inside cargo measure temperature & humidity.  
 - **ESP32 Broker (C)** inside the vehicle collects sensor data via **WiFi or Bluetooth**.  
@@ -17,7 +16,6 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 ---
 
 ## Sensor Package  
-![Sensor Package]
 
 **Control Unit (in vehicle):**  
 - GPS sensor  
@@ -35,7 +33,6 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 ---
 
 ## Tasks & Infrastructure  
-![Tasks]
 
 **Sensor & Base Unit:**  
 - Base unit with automation capacity (ESP32/RPi)  
@@ -51,7 +48,6 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 ---
 
 ## Logistics Flow (Chas Advance)  
-![Logistics Overview]
 
 1. **Warehouse Checkout** – Packages scanned (barcode + mobile terminal) → activates logging & sensor suite.  
 2. **Transport** – Truck/train/airplane; handover possible with new base unit.  
