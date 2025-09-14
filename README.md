@@ -5,7 +5,7 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 
 ---
 
-## 🌐 System Overview  
+##  System Overview  
 ![System Architecture](infrastrukturbild.PNG)  
 
 - **Sensor Nodes (S)** inside cargo measure temperature & humidity.  
@@ -16,7 +16,7 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 
 ---
 
-## 📦 Sensor Package  
+## Sensor Package  
 ![Sensor Package](Embeddeduppgifter.PNG)  
 
 **Control Unit (in vehicle):**  
@@ -34,7 +34,7 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 
 ---
 
-## ✅ Tasks & Infrastructure  
+## Tasks & Infrastructure  
 ![Tasks](UppgifterattKora.PNG)  
 
 **Sensor & Base Unit:**  
@@ -50,7 +50,7 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 
 ---
 
-## 🚛 Logistics Flow (Chas Advance)  
+## Logistics Flow (Chas Advance)  
 ![Logistics Overview](Oversikt.PNG)  
 
 1. **Warehouse Checkout** – Packages scanned (barcode + mobile terminal) → activates logging & sensor suite.  
@@ -60,7 +60,7 @@ The system monitors and logs **temperature, humidity, and GPS location** during 
 
 ---
 
-## 🔧 Tech Stack  
+## Tech Stack  
 - **ESP32-S3 / Arduino UNO R4 WiFi** – sensor & gateway layers  
 - **DHT22** – temperature and humidity sensing  
 - **LCD 16x2 (I²C)** – real-time display  
