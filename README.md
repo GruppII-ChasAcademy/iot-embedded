@@ -1,44 +1,70 @@
-# IoT GruppII Climate Monitor
+# IoT GroupII – Climate Controlled Logistics Monitor  
 
-The **IoT GruppII Climate Monitor** is an IoT-based project designed to measure and monitor environmental conditions.  
-It combines a **temperature and humidity sensor** with an **ESP32 server** that can process and share data with other devices or cloud services.  
-The system is lightweight, scalable, and can be simulated in **Wokwi** before being deployed to real hardware.
-
-This repository contains the firmware for both the **sensor node** and the **ESP32 server**, written in **C++** and built using **PlatformIO**.
+This project is an **IoT-based logistics system** designed to guarantee **climate-controlled delivery of special goods** (e.g., bananas).  
+The system monitors and logs **temperature, humidity, and GPS location** during transportation, ensuring traceability and quality control.  
 
 ---
 
-## Features
-- **Real-Time Sensing** – Measures ambient temperature (°C) and humidity (%) using the DHT22 sensor.  
-- **LCD Display** – Live readings shown on a 16x2 I2C LCD module.  
-- **ESP32 Server** – Acts as a hub to receive and forward sensor data via Wi-Fi.  
-- **Serial Debugging** – Outputs sensor values and server logs for developers.  
-- **Wokwi Simulation** – Entire project can be tested virtually before deployment.  
-- **Future Extensions** – Low-power design, MQTT integration, and cloud dashboards.  
+## 🌐 System Overview  
+![System Architecture](infrastrukturbild.PNG)  
+
+- **Sensor Nodes (S)** inside cargo measure temperature & humidity.  
+- **ESP32 Broker (C)** inside the vehicle collects sensor data via **WiFi or Bluetooth**.  
+- **Mobile Unit (M)** forwards data to the **Web Server (W)** over **4G/5G**.  
+- **GPS** provides continuous location tracking.  
+- Data is logged both **locally** and in the **backend** for redundancy.  
 
 ---
 
-## Hardware Requirements
-| Component                  | Description                                 |
-|-----------------------------|---------------------------------------------|
-| Arduino UNO R4 WiFi / ESP32-S3 | Microcontroller boards used in this project |
-| DHT22 Sensor               | Temperature & humidity measurement          |
-| LCD 16x2 with I2C module   | Displays readings                           |
-| Waveshare ESP32-S3-Zero    | Used as server for communication            |
-| Breadboard + Jumper Wires  | Circuit prototyping                         |
-| Power Supply               | USB or LiPo battery                         |
+## 📦 Sensor Package  
+![Sensor Package](Embeddeduppgifter.PNG)  
+
+**Control Unit (in vehicle):**  
+- GPS sensor  
+- 4G/5G connection to backend  
+- Automated control of temperature & dehumidification (simulated)  
+- Connection to all package sensors  
+- Local logging  
+
+**Each Sensor Node (in package):**  
+- Temperature sensor  
+- Humidity sensor  
+- Local logging  
+- Wireless link to vehicle control unit  
 
 ---
 
-## Use Cases
-- Local weather station for small-scale environments.  
-- IoT learning prototype for embedded systems.  
-- Gateway for collecting and forwarding sensor data to a backend or mobile app.  
+## ✅ Tasks & Infrastructure  
+![Tasks](UppgifterattKora.PNG)  
 
+**Sensor & Base Unit:**  
+- Base unit with automation capacity (ESP32/RPi)  
+- GPS + mobile network connection  
+- Wireless sensor integration  
+- Distributed & deployed sensor packages  
 
-## Developer Notes
-- Developed and tested with **Wokwi simulator** → [wokwi.com](https://wokwi.com)  
-- Built with **PlatformIO** and **Arduino framework**  
-- Easily extendable with MQTT, cloud integrations, or custom dashboards.  
+**CI/CD:**  
+- GitHub Actions, Projects, and optional Packages  
+- Test structure for IoT, Backend, and Frontend  
+- Multiple repos using **Git Flow** (shift to **GitHub Flow** for Continuous Delivery/Deployment)  
 
 ---
+
+## 🚛 Logistics Flow (Chas Advance)  
+![Logistics Overview](Oversikt.PNG)  
+
+1. **Warehouse Checkout** – Packages scanned (barcode + mobile terminal) → activates logging & sensor suite.  
+2. **Transport** – Truck/train/airplane; handover possible with new base unit.  
+3. **Monitoring & Control** – Data logged locally + sent to backend; vehicle unit can regulate climate conditions.  
+4. **Delivery** – Data finalized upon arrival and logged at the receiving warehouse.  
+
+---
+
+## 🔧 Tech Stack  
+- **ESP32-S3 / Arduino UNO R4 WiFi** – sensor & gateway layers  
+- **DHT22** – temperature and humidity sensing  
+- **LCD 16x2 (I²C)** – real-time display  
+- **Wokwi** – simulation of entire system  
+- **PlatformIO (C++)** – development environment  
+- **GitHub CI/CD** – workflow automation, testing & deployments  
+
