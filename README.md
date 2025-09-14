@@ -4,6 +4,8 @@ This project is an **IoT-based logistics system** designed to guarantee **climat
 The system monitors and logs **temperature, humidity, and GPS location** during transportation, ensuring traceability and quality control.  
 
 ---
+<img width="966" height="538" alt="infrastrukturbild" src="https://github.com/user-attachments/assets/32e21b1b-ff3a-49e1-ba2c-f6684bca03f2" />
+
 
 ##  System Overview  
 
