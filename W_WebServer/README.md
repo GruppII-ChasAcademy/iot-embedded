@@ -1,238 +1,146 @@
-# W_WebServer — Azure backend (IoT Hub/Event Hubs → REST)
+# IoT GroupII – Climate-Controlled Logistics Monitor
 
-Lättviktig Node-backend som tar emot telemetri från **Azure IoT Hub** (via **Event Hubs-kompatibel endpoint**) eller **lokal MQTT** och exponerar ett enkelt **REST-API** för dashboards och klienter.  
-Projektet ingår i IoT-helheten (S = SensorNodes, C = ESP32-Gateway, M = Mobile, W = WebServer).
-
-## Arkitektur (Mermaid)
-```mermaid
-flowchart LR
-  S[Sensor Nodes<br/>(UNO R4 + DHT22)] -->|BLE/WiFi| G[ESP32 Gateway]
-  G -->|MQTT / IoT Hub| H[Azure IoT Hub<br/>→ Event Hubs]
-  H --> C[W_WebServer<br/>(Consumer + REST)]
-  C --> D[Dashboard / Client]
-```
-
-> Om din GitHub inte renderar Mermaid kan du lägga bilden ovan eller en ASCII-skiss.
+Detta är ett **IoT-system** som säkerställer **klimatkontrollerade leveranser** (t.ex. bananer).
+Systemet loggar **temperatur, luftfuktighet och GPS-position** under transport för spårbarhet och kvalitetskontroll.
 
 ---
 
-## Förkrav
+<img width="966" height="538" alt="infrastrukturbild" src="https://github.com/user-attachments/assets/32e21b1b-ff3a-49e1-ba2c-f6684bca03f2" />
 
-- **Node.js 18+** och **npm**  
-- **Azure IoT Hub** med åtkomst till **Built-in endpoints**  
-- (Valfritt) **MQTT-broker** lokalt, t.ex. Mosquitto
+## System Overview
+
+- **Sensor Nodes (S)** – **Arduino UNO R4 WiFi** i lasten mäter temperatur & luftfuktighet.  
+- **ESP32 Gateway/Broker (C)** – samlar in sensordata via **WiFi/BLE**.  
+- **Mobile Unit (M)** – skickar data till **Web Server (W)** via **4G/5G**.  
+- **GPS** – kontinuerlig positionsspårning.  
+- Data loggas både **lokalt** och i **backend** för redundans.
 
 ---
 
-## Mappstruktur
+## Architecture (ASCII)
 
 ```
-W_WebServer/
-├─ src/               # routes, consumers, utils
-├─ package.json       # scripts & beroenden
-├─ .env               # hemligheter/konfig (ska INTE in i Git)
-└─ README.md
+[S_SensorNodes] --(BLE/WiFi)--> [C_ESP32_Gateway] --(MQTT)--> [W_WebServer] --(REST)--> [Dashboard]
+                                   \_____________________________________________________________/
+                                                       (Optional cloud: Azure IoT Hub/Event Hubs)
 ```
 
 ---
 
-## Snabbstart (lokalt)
+## Prerequisites
+
+- Node.js **18+** och **npm** (för W_WebServer)  
+- Azure IoT Hub med **Built-in endpoints** (om molnflöde används)  
+- Mosquitto eller annan **MQTT-broker** (för lokalt läge)
+
+---
+
+## Repository Layout
+
+```
+S_SensorNodes/     # UNO R4 WiFi sensornoder (DHT22, LCD I2C, MQTT)
+C_ESP32_Gateway/   # ESP32 gateway/broker (samlar in & vidarebefordrar)
+W_WebServer/       # REST-backend (lokal eller Azure Event Hubs-konsument)
+M_MobileUnit/      # (valfritt) mobilklient
+```
+
+---
+
+## Web Server (W) – Quick Start
 
 ```bash
-# 1) Installera beroenden
-npm ci   # eller: npm install
-
-# 2) Skapa .env (se "Miljövariabler" nedan)
-# cp .env.example .env  # om filen finns
-
-# 3) Starta
-npm run dev   # utveckling (nodemon)
-# eller
-npm start     # produktion
-
-# 4) Hälsokoll
+cd W_WebServer
+npm ci                  # eller: npm install
+# .env (lokalt MQTT-exempel):
+# PORT=3000
+# CORS_ORIGIN=*
+# USE_AZURE=false
+# MQTT_URL="mqtt://<gateway-ip>:1883"
+# MQTT_TOPIC="sensors/#"
+npm run dev
 curl http://localhost:3000/health
-
-# 5) Exempel: hämta senaste telemetri
-curl "http://localhost:3000/api/telemetry?limit=50"
 ```
 
----
-
-## Miljövariabler (`.env`)
-
-```ini
-# Server
-PORT=3000
-CORS_ORIGIN=*
-
-# Datakälla
-USE_AZURE=true        # true = Azure Event Hubs (IoT Hub), false = lokal MQTT
-
-# Azure Event Hubs (IoT Hub → Built-in endpoints)
-AZURE_EVENTHUB_CONNECTION_STRING="Endpoint=sb://<...>.servicebus.windows.net/;SharedAccessKeyName=<policy>;SharedAccessKey=<key>"
-AZURE_EVENTHUB_NAME="iothub-<ditt-hub-namn>-events"
-AZURE_CONSUMER_GROUP="$Default"   # t.ex. web
-
-# Lokal MQTT (om USE_AZURE=false)
-MQTT_URL="mqtt://localhost:1883"
-MQTT_TOPIC="sensors/#"
-```
-
-### Var hittar jag Azure-värdena?
-1) Azure Portal → **din IoT Hub** → **Built-in endpoints**  
-2) Kopiera **Event Hub-compatible endpoint** → `AZURE_EVENTHUB_CONNECTION_STRING` (utan `EntityPath`)  
-3) Kopiera **Event Hub-compatible name** → `AZURE_EVENTHUB_NAME`  
-4) Skapa gärna en egen **Consumer group** (t.ex. `web`) → `AZURE_CONSUMER_GROUP`
+> För Azure-läge: fyll i `AZURE_EVENTHUB_CONNECTION_STRING`, `AZURE_EVENTHUB_NAME`, `AZURE_CONSUMER_GROUP`
+> och sätt `USE_AZURE=true`.
 
 ---
 
-## Telemetri (rekommenderat JSON-format)
+## ESP32 Gateway – endast relevanta rader
 
-```json
-{
-  "deviceId": "uno-r4-01",
-  "ts": 1738256400,
-  "temperature": 22.8,
-  "humidity": 41.5,
-  "rssi": -63,
-  "battery": 3.98,
-  "meta": { "fw": "1.0.3" }
-}
-```
-
-> Backend förväntar sig JSON per meddelande. Anpassa parsern i `src/` om ditt format skiljer sig.
-
----
-
-## REST-API (exempel)
-
-- `GET /health` → enkel status (t.ex. `{ "status": "ok" }`)  
-- `GET /api/telemetry` → senaste mätvärden  
-  **Query-params:**  
-  - `limit` (int, default 50)  
-  - `deviceId` (str, valfritt)  
-  - `from`, `to` (ISO 8601 eller unix-sek, valfritt)
-
-*(Se exakta rutter i `src/routes` om implementationen avviker.)*
-
----
-
-## Lokal MQTT-mode (om `USE_AZURE=false`)
-
-```bash
-# Publicera testmeddelande (Mosquitto):
-mosquitto_pub -h localhost -t "sensors/uno-r4-01" \
-  -m '{"deviceId":"uno-r4-01","ts":1738256400,"temperature":22.8,"humidity":41.5}'
-
-# Läs via REST:
-curl "http://localhost:3000/api/telemetry?limit=1"
-```
-
----
-
-## ESP32 — exempel (inspiration, BLE-stil)
-
-> Den här snutten visar **stil** och struktur – anpassa till din kodbas (WiFi, topics, m.m.).
+**Syfte:** skapa AP + starta inbäddad MQTT-broker och logga allt som publiceras.
 
 ```cpp
 #include <WiFi.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
+#include <uMQTTBroker.h>
 
-BLEServer* pServer = nullptr;
-BLECharacteristic* pChar = nullptr;
+const char* AP_SSID = "ESP32-GW";
+const char* AP_PASS = "12345678";
 
-#define SERVICE_UUID        "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"   // UART-like
-#define CHARACTERISTIC_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"   // TX Notify
+class MyBroker : public uMQTTBroker {
+  void onData(String topic, const char* data, uint32_t len) override {
+    Serial.printf("[MQTT] %s => %.*s\n", topic.c_str(), len, data);
+  }
+} broker;
 
 void setup() {
   Serial.begin(115200);
-  BLEDevice::init("ESP32-Gateway");
-
-  BLEServer* server = BLEDevice::createServer();
-  BLEService* service = server->createService(SERVICE_UUID);
-
-  pChar = service->createCharacteristic(
-      CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_NOTIFY
-  );
-  pChar->addDescriptor(new BLE2902());
-  service->start();
-
-  BLEAdvertising* adv = BLEDevice::getAdvertising();
-  adv->addServiceUUID(SERVICE_UUID);
-  adv->start();
-}
-
-void loop() {
-  // Exempel: skicka en liten JSON var 5 s (notify)
-  static unsigned long last = 0;
-  if (millis() - last > 5000) {
-    last = millis();
-    String json = "{\"deviceId\":\"uno-r4-01\",\"ts\":" + String(millis()/1000) +
-                  ",\"temperature\":22.8,\"humidity\":41.5}";
-    pChar->setValue((uint8_t*)json.c_str(), json.length());
-    pChar->notify();
-  }
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(AP_SSID, AP_PASS);   // AP för noder
+  broker.init(1883);                // starta broker
+  broker.subscribe("#");            // logga allt
 }
 ```
 
+**Libbar:** `uMQTTBroker` (ESP32).
+
 ---
 
-## Vanliga npm-kommandon
+## UNO R4 Sensor Node – endast relevanta rader
 
-```bash
-npm ci        # ren installation från lockfile
-npm run dev   # utvecklingsläge (nodemon)
-npm start     # produktion
-npm test      # om tester finns
+**Syfte:** läsa DHT och publicera ett litet JSON-payload till gatewayns broker.
+
+```cpp
+#include <ArduinoMqttClient.h>
+#include <DHT.h>
+
+const char* DEVICE_ID  = "uno-r4-01";
+const char* MQTT_TOPIC = "sensors/uno-r4-01";
+
+extern MqttClient mqtt;  // antas vara uppkopplad
+extern DHT dht;          // antas vara initierad
+
+void publishOnce() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+  if (isnan(t) || isnan(h)) return;
+
+  String payload = String("{\"deviceId\":\"") + DEVICE_ID +
+                   "\",\"ts\":" + String(millis()/1000) +
+                   ",\"temperature\":" + String(t,1) +
+                   ",\"humidity\":"  + String(h,1) + "}";
+
+  mqtt.beginMessage(MQTT_TOPIC);
+  mqtt.print(payload);
+  mqtt.endMessage();
+}
 ```
 
----
-
-## Felsökning
-
-- **401/403/ReceiverDisconnected** → ogiltig `AZURE_EVENTHUB_CONNECTION_STRING` / saknade rättigheter.  
-- **No such event hub** → fel `AZURE_EVENTHUB_NAME` (måste vara *Event Hub-name*, inte IoT Hub-namnet).  
-- **EADDRINUSE** → port upptagen; byt `PORT`.  
-- **Inget data** → verifiera flöde med `az iot hub monitor-events -n <hub> --consumer-group <grp>`, kontrollera consumer group och tidsformat.  
-- **CORS-fel** → sätt `CORS_ORIGIN="*"` i dev eller din domän i prod.
+**Libbar:** `ArduinoMqttClient`, `DHT sensor library` (+ `Adafruit Unified Sensor`).
 
 ---
 
-## Säkerhet & Git-hygien
+## End-to-End (lokal MQTT)
 
-Lägg **aldrig** hemligheter i Git. Ignorera `.env`:
-
-```gitignore
-W_WebServer/.env
-.env
-```
-
-Valfritt i rot:
-
-```gitignore
-W_WebServer/node_modules/
-*.pem
-*.key
-*.pfx
-*.log
-```
+1. **ESP32**: starta gatewayn, notera AP-IP (ofta `192.168.4.1`).  
+2. **UNO R4**: anslut till `ESP32-GW`, publicera till `sensors/<id>`.  
+3. **Backend**: kör `W_WebServer` i `USE_AZURE=false` och peka `MQTT_URL` mot gateway-IP.  
+4. Verifiera med `curl http://localhost:3000/health` och (om route finns) `curl "http://localhost:3000/api/telemetry?limit=1"`.
 
 ---
 
-## Repo-översikt (kort)
+## Notes
 
-- `C_ESP32_Gateway/` – ESP32-gateway  
-- `S_SensorNodes/`  – sensornoder (Arduino/UNO R4)  
-- `M_MobileUnit/`   – mobilklient  
-- `W_WebServer/`    – **denna backend**
+- För **Azure Event Hubs**: sätt `USE_AZURE=true` och fyll i EH-variabler i `.env`.  
+- Lägg **aldrig** hemligheter i Git – ignorera `.env`.
 
----
-
-## Licens
-
-MIT (om inget annat anges).
