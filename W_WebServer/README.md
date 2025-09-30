@@ -1,21 +1,25 @@
-# ╔════════════════════════════════════════════════════════════════╗
-# ║                 WebServer · IoT → Backend (W)                  ║
-# ╟────────────────────────────────────────────────────────────────╢
-# ║  Tar emot sensordata • Normaliserar • Exponerar REST-API       ║
-# ║  Flöde: S (Sensor) → C (ESP32 Gateway) → W (WebServer) → UI    ║
-# ║  Lägen: MQTT lokalt | Azure IoT Hub / Event Hubs i molnet      ║
-# ╚════════════════════════════════════════════════════════════════╝
+# WebServer — IoT → Backend
 
-## System Overview
+**Purpose:** Central backend som tar emot sensortelemetri och exponerar ett enkelt **REST-API** för dashboards/klienter.  
+**Modes:** Lokalt via **MQTT** (ESP32-gateway) eller moln via **Azure IoT Hub → Event Hubs**.  
+**Project:** GroupII · Chas Advanced
 
-- **Sensor Nodes (S)** – **Arduino UNO R4 WiFi** i lasten mäter temperatur & luftfuktighet.  
-- **ESP32 Gateway/Broker (C)** – samlar in sensordata via **WiFi/BLE**.  
-- **Mobile Unit (M)** – skickar data till **Web Server (W)** via **4G/5G**.  
-- **GPS** – kontinuerlig positionsspårning.  
-- Data loggas både **lokalt** och i **backend** för redundans.
+- **Base URL:** `http://localhost:3000`
+- **Health:** `GET /health` (status/uptime)
+- **Telemetry:** `GET /api/telemetry?limit=50&deviceId=<id>&from=<iso>&to=<iso>`
+- **MQTT Topic (lokalt):** `sensors/<deviceId>`
+- **Payload (exempel):** `{"deviceId":"uno-r4-01","ts":1738256400,"temperature":22.8,"humidity":41.5}`
 
----
-
+### Start in 30s
+```bash
+npm ci
+# .env (lokalt MQTT)
+# PORT=3000
+# USE_AZURE=false
+# MQTT_URL="mqtt://<gateway-ip>:1883"
+# MQTT_TOPIC="sensors/#"
+npm run dev
+```
 ## Architecture (ASCII)
 
 ```
