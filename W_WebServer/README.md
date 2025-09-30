@@ -3,20 +3,6 @@
 Lättviktig Node-backend som tar emot telemetri från **Azure IoT Hub** (via **Event Hubs-kompatibel endpoint**) eller **lokal MQTT** och exponerar ett enkelt **REST-API** för dashboards och klienter.  
 Projektet ingår i IoT-helheten (S = SensorNodes, C = ESP32-Gateway, M = Mobile, W = WebServer).
 
----
-
-![infrastrukturbild](https://github.com/user-attachments/assets/32e21b1b-ff3a-49e1-ba2c-f6684bca03f2)
-
-## System Overview
-
-- **Sensor Nodes (S)** – **Arduino UNO R4 WiFi** i lasten mäter temperatur & luftfuktighet.  
-- **ESP32 Gateway/Broker (C)** – i fordonet samlar in sensorvärden via **WiFi/BLE**.  
-- **Mobile Unit (M)** – skickar data till **Web Server (W)** via **4G/5G**.  
-- **GPS** – kontinuerlig positionsspårning.  
-- Datan loggas både **lokalt** och i **backend** för redundans.
-
----
-
 ## Arkitektur (Mermaid)
 
 ```mermaid
