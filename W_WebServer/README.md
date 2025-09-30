@@ -1,227 +1,253 @@
-# ========================================================================
 # W_WebServer — Azure backend (IoT Hub/Event Hubs → REST)
-# ========================================================================
-# ÖVERSIKT
-# Den här backend:en:
-# 1) Läser telemetri från Azure IoT Hub via dess Event Hubs-kompatibla endpoint
-#    (alternativt från en lokal MQTT-broker).
-# 2) Transformerar/validerar inkommande meddelanden.
-# 3) Exponerar REST-endpoints som din dashboard eller mobilklient kan hämta från.
-#
-# Den är byggd i Node.js. Kör lokalt för utveckling, eller deploya till valfri
-# server/container i produktion.
 
-# ------------------------------------------------------------------------
-# ARKITEKTUR (ASCII)
-# ------------------------------------------------------------------------
-#  [S_SensorNodes] --(BLE/WiFi)--> [C_ESP32_Gateway] --(MQTT/IoT Hub)-->
-#        \______________________________________________________________/
-#                                     |
-#                                     v
-#                          [Azure IoT Hub → Event Hubs]
-#                                     |
-#                           (EventProcessor/Consumer)
-#                                     |
-#                                     v
-#                              [W_WebServer (REST)]
-#                                     |
-#                                     v
-#                               [Dashboard/Client]
+Lättviktig Node-backend som tar emot telemetri från **Azure IoT Hub** (via **Event Hubs-kompatibel endpoint**) eller **lokal MQTT** och exponerar ett enkelt **REST-API** för dashboards och klienter.  
+Projektet ingår i IoT-helheten (S = SensorNodes, C = ESP32-Gateway, M = Mobile, W = WebServer).
 
-# ------------------------------------------------------------------------
-# FÖRKRAV
-# ------------------------------------------------------------------------
-# - Node.js 18 eller senare + npm
-# - (Moln) Azure IoT Hub med åtkomst till "Built-in endpoints"
-# - (Lokalt, valfritt) MQTT-broker (t.ex. Mosquitto)
+---
 
-# ------------------------------------------------------------------------
-# MAPPSTRUKTUR (kort)
-# ------------------------------------------------------------------------
-# W_WebServer/
-# ├─ src/               # källkod (routers, konsumenter, utils)
-# ├─ package.json       # script/beroenden
-# ├─ .env               # dina hemligheter (SKA INTE commit:as)
-# └─ README.md          # denna fil
+![infrastrukturbild](https://github.com/user-attachments/assets/32e21b1b-ff3a-49e1-ba2c-f6684bca03f2)
 
-# ------------------------------------------------------------------------
-# TL;DR — SNABBSTART (LOKALT)
-# ------------------------------------------------------------------------
-# 1) Gå in i mappen
-cd "$(dirname "$0")" 2>/dev/null || true
-# (når inte alltid ovan i GitHub-läsning; kör manuellt i terminal när du utvecklar:)
-# cd W_WebServer
+## System Overview
 
-# 2) Installera beroenden (ren installation)
-# - Använd npm ci om package-lock.json finns (det låser versioner exakt)
-# - Annars npm install
-# npm ci
-# npm install
+- **Sensor Nodes (S)** – **Arduino UNO R4 WiFi** i lasten mäter temperatur & luftfuktighet.  
+- **ESP32 Gateway/Broker (C)** – i fordonet samlar in sensorvärden via **WiFi/BLE**.  
+- **Mobile Unit (M)** – skickar data till **Web Server (W)** via **4G/5G**.  
+- **GPS** – kontinuerlig positionsspårning.  
+- Datan loggas både **lokalt** och i **backend** för redundans.
 
-# 3) Skapa en .env (KLIPPA/ KLIStra in exemplet längre ner och fyll i)
-#    Placera filen i W_WebServer/.env
+---
 
-# 4) Starta i utvecklingsläge (auto-restart via nodemon om konfigurerat)
-# npm run dev
-#    eller i "produktion"
-# npm start
+## Arkitektur (Mermaid)
 
-# 5) Hälsokontroll i annan terminal/flik:
-# curl http://localhost:3000/health
+```mermaid
+flowchart LR
+  S[Sensor Nodes<br/>(UNO R4 + DHT22)] -->|BLE/WiFi| G[ESP32 Gateway]
+  G -->|MQTT / IoT Hub| H[Azure IoT Hub<br/>→ Event Hubs]
+  H --> C[W_WebServer<br/>(Consumer + REST)]
+  C --> D[Dashboard / Client]
+```
 
-# 6) Testa en (exempel)-endpoint:
-# curl "http://localhost:3000/api/telemetry?limit=50"
+> Om din GitHub inte renderar Mermaid kan du lägga bilden ovan eller en ASCII-skiss.
 
-# ------------------------------------------------------------------------
-# EXEMPEL PÅ .env — KOPIERA DETTA TILL W_WebServer/.env OCH FYLL I
-# ------------------------------------------------------------------------
-# -----8<----- klipp här (börja kopiera nästa rad) -----8<-----
+---
+
+## Förkrav
+
+- **Node.js 18+** och **npm**  
+- **Azure IoT Hub** med åtkomst till **Built-in endpoints**  
+- (Valfritt) **MQTT-broker** lokalt, t.ex. Mosquitto
+
+---
+
+## Mappstruktur
+
+```
+W_WebServer/
+├─ src/               # routes, consumers, utils
+├─ package.json       # scripts & beroenden
+├─ .env               # hemligheter/konfig (ska INTE in i Git)
+└─ README.md
+```
+
+---
+
+## Snabbstart (lokalt)
+
+```bash
+# 1) Installera beroenden
+npm ci   # eller: npm install
+
+# 2) Skapa .env (se "Miljövariabler" nedan)
+# cp .env.example .env  # om filen finns
+
+# 3) Starta
+npm run dev   # utveckling (nodemon)
+# eller
+npm start     # produktion
+
+# 4) Hälsokoll
+curl http://localhost:3000/health
+
+# 5) Exempel: hämta senaste telemetri
+curl "http://localhost:3000/api/telemetry?limit=50"
+```
+
+---
+
+## Miljövariabler (`.env`)
+
+```ini
 # Server
-# PORT=3000
-# CORS_ORIGIN=*
-#
+PORT=3000
+CORS_ORIGIN=*
+
 # Datakälla
-# USE_AZURE=true               # true = läs från Azure Event Hubs; false = läs MQTT
-#
+USE_AZURE=true        # true = Azure Event Hubs (IoT Hub), false = lokal MQTT
+
 # Azure Event Hubs (IoT Hub → Built-in endpoints)
-# AZURE_EVENTHUB_CONNECTION_STRING="Endpoint=sb://<...>.servicebus.windows.net/;SharedAccessKeyName=<policy>;SharedAccessKey=<key>"
-# AZURE_EVENTHUB_NAME="iothub-<ditt-hub-namn>-events"
-# AZURE_CONSUMER_GROUP="$Default"     # rekommenderas: skapa t.ex. "web"
-#
+AZURE_EVENTHUB_CONNECTION_STRING="Endpoint=sb://<...>.servicebus.windows.net/;SharedAccessKeyName=<policy>;SharedAccessKey=<key>"
+AZURE_EVENTHUB_NAME="iothub-<ditt-hub-namn>-events"
+AZURE_CONSUMER_GROUP="$Default"   # t.ex. web
+
 # Lokal MQTT (om USE_AZURE=false)
-# MQTT_URL="mqtt://localhost:1883"
-# MQTT_TOPIC="sensors/#"
-# -----8<----- klipp här (sluta kopiera) -----8<-----
+MQTT_URL="mqtt://localhost:1883"
+MQTT_TOPIC="sensors/#"
+```
 
-# ------------------------------------------------------------------------
-# VAR HITTAR JAG AZURE-VÄRDENA?
-# ------------------------------------------------------------------------
-# Azure Portal → din IoT Hub → "Built-in endpoints"
-#   - Event Hub-compatible endpoint     → till AZURE_EVENTHUB_CONNECTION_STRING (utan EntityPath)
-#   - Event Hub-compatible name         → till AZURE_EVENTHUB_NAME
-#   - Consumer groups                   → skapa t.ex. "web" (lägg i AZURE_CONSUMER_GROUP)
-#
-# (Valfritt) Azure CLI (kräver inloggning och iot-extension):
-#   az extension add --name azure-iot
-#   az login
-#   az iot hub monitor-events -n <HUBNAMN> --consumer-group <GRUPP>
-#   # ovan låter dig snoka på händelser i realtid, bra för felsökning
+### Var hittar jag Azure-värdena?
+1) Azure Portal → **din IoT Hub** → **Built-in endpoints**  
+2) Kopiera **Event Hub-compatible endpoint** → `AZURE_EVENTHUB_CONNECTION_STRING` (utan `EntityPath`)  
+3) Kopiera **Event Hub-compatible name** → `AZURE_EVENTHUB_NAME`  
+4) Skapa gärna en egen **Consumer group** (t.ex. `web`) → `AZURE_CONSUMER_GROUP`
 
-# ------------------------------------------------------------------------
-# DATAFORMAT — EXEMPEL PÅ TELEMETRI (REKOMMENDERAT)
-# ------------------------------------------------------------------------
-# Avsändare (gateway eller nod) bör publicera JSON ungefär så här:
-# {
-#   "deviceId": "uno-r4-01",
-#   "ts": 1738256400,              # unix seconds, eller ISO 8601 i "time"
-#   "temperature": 22.8,           # °C
-#   "humidity": 41.5,              # %
-#   "rssi": -63,                   # valfritt, signalstyrka
-#   "battery": 3.98,               # valfritt, V
-#   "meta": { "fw": "1.0.3" }      # valfritt, fria fält
-# }
-#
-# Backend:en förutsätter normalt JSON per meddelande. Om dina noder skickar
-# annan struktur, anpassa parsern/transformern i src/.
+---
 
-# ------------------------------------------------------------------------
-# REST-ENDPOINTS (KAN VARIERA LITE MED IMPLEMENTATIONEN – SE src/routes)
-# ------------------------------------------------------------------------
-# GET /health
-#  - Returnerar något enkelt ("ok", version, uptime)
-#
-# GET /api/telemetry?limit=50&deviceId=uno-r4-01&from=ISO8601&to=ISO8601
-#  - Hämtar senaste mätvärden; parametrar är valfria:
-#    - limit: antal poster (default t.ex. 50)
-#    - deviceId: filtrera på specifik enhet
-#    - from/to: tidsintervall (ISO 8601 eller unix sek)
-#
-# (Din kodbas kan även ha fler rutter, t.ex. /api/devices, /api/stats etc.
-#  Kontrollera src/routes för exakta vägar och parametrar.)
+## Telemetri (rekommenderat JSON-format)
 
-# ------------------------------------------------------------------------
-# VANLIGA KOMMANDON (NPM SCRIPTS)
-# ------------------------------------------------------------------------
-# npm ci            # ren, reproducerbar installation från package-lock
-# npm install       # normal installation (om du inte har lockfil)
-# npm run dev       # dev-läge (auto-restart om nodemon finns)
-# npm start         # start i "produktion"
-# npm test          # kör tester om definierade
-#
-# Tips:
-# - Använd nvm (Node Version Manager) för att låsa Node 18 i utveckling:
-#   nvm install 18; nvm use 18
+```json
+{
+  "deviceId": "uno-r4-01",
+  "ts": 1738256400,
+  "temperature": 22.8,
+  "humidity": 41.5,
+  "rssi": -63,
+  "battery": 3.98,
+  "meta": { "fw": "1.0.3" }
+}
+```
 
-# ------------------------------------------------------------------------
-# MQTT LOKALT — SNABBTEST (OM USE_AZURE=false)
-# ------------------------------------------------------------------------
-# Starta en lokal broker (exempel Mosquitto) och skicka testmeddelande:
-# mosquitto_pub -h localhost -t "sensors/uno-r4-01" \
-#   -m '{"deviceId":"uno-r4-01","ts":1738256400,"temperature":22.8,"humidity":41.5}'
-#
-# Kontrollera därefter REST:
-# curl "http://localhost:3000/api/telemetry?limit=1"
+> Backend förväntar sig JSON per meddelande. Anpassa parsern i `src/` om ditt format skiljer sig.
 
-# ------------------------------------------------------------------------
-# FELSÖKNING (CHECKLISTA)
-# ------------------------------------------------------------------------
-# ⛔ Server startar inte / port upptagen:
-#   - Ändra PORT i .env (t.ex. 3001)
-#
-# ⛔ 401/403/ReceiverDisconnected (Azure):
-#   - Fel policy/nyckel i AZURE_EVENTHUB_CONNECTION_STRING
-#   - Säkerställ att strängen är "Event Hub-compatible" (inte IoT Hub-owner)
-#
-# ⛔ "No such event hub":
-#   - AZURE_EVENTHUB_NAME måste vara *Event Hub-compatible name* (ofta iothub-...-events)
-#
-# ⛔ Inget data syns i API:t:
-#   - Verifiera at telemetri faktiskt flödar (Azure CLI: monitor-events)
-#   - Kolla consumer group (en och samma group kan "låsa" läsning i annan process)
-#   - Tidsstämplar i fel format → kontrollera parsern
-#
-# ⛔ CORS-problem i frontend:
-#   - Sätt CORS_ORIGIN=* (för dev) eller din domän i produktion
-#
-# ⛔ Prestanda / ryckig konsumtion:
-#   - Event Hubs har partitioner → se till att din konsument loopar över alla
-#   - Batcha skrivningar och undvik synk/blockerande logik i hot path
+---
 
-# ------------------------------------------------------------------------
-# SÄKERHET & HYGien
-# ------------------------------------------------------------------------
-# Lägg aldrig hemligheter i Git. Lägg i .env (och ignorera den i .gitignore).
-# Rekommenderad .gitignore-rad:
-#   W_WebServer/.env
-#   .env
-#
-# Rot-.gitignore kan även ignorera t.ex.:
-#   W_WebServer/node_modules/
-#   *.pem *.key *.pfx
-#   *.log
+## REST-API (exempel)
 
-# ------------------------------------------------------------------------
-# ENKEL PRODUKTIONSKÖRNING (PM2 eller DOCKER — VALFRITT)
-# ------------------------------------------------------------------------
-# PM2 (process manager):
-#   npm i -g pm2
-#   pm2 start npm --name w_webserver -- start
-#   pm2 save
-#
-# Docker (skiss — beroende på din Dockerfile):
-#   docker build -t w_webserver:latest .
-#   docker run -d --name w_webserver -p 3000:3000 --env-file .env w_webserver:latest
+- `GET /health` → enkel status (t.ex. `{ "status": "ok" }`)  
+- `GET /api/telemetry` → senaste mätvärden  
+  **Query-params:**  
+  - `limit` (int, default 50)  
+  - `deviceId` (str, valfritt)  
+  - `from`, `to` (ISO 8601 eller unix-sek, valfritt)
 
-# ------------------------------------------------------------------------
-# FRÅGOR & VIDARE UTVECKLING
-# ------------------------------------------------------------------------
-# - Behöver du fler endpoints? Lägg dem i src/routes och dokumentera dem här.
-# - Behöver du historiklagring? Koppla på en databas (t.ex. PostgreSQL, InfluxDB)
-#   och låt konsumenten persist: a telemetri innan REST svarar klienterna.
-# - Vill du ha push/real-time? Lägg till WebSocket/SSE ovanpå REST.
+*(Se exakta rutter i `src/routes` om implementationen avviker.)*
 
-# ------------------------------------------------------------------------
-# LICENS
-# ------------------------------------------------------------------------
-# MIT (om inget annat anges)
-# ========================================================================
+---
+
+## Lokal MQTT-mode (om `USE_AZURE=false`)
+
+```bash
+# Publicera testmeddelande (Mosquitto):
+mosquitto_pub -h localhost -t "sensors/uno-r4-01" \
+  -m '{"deviceId":"uno-r4-01","ts":1738256400,"temperature":22.8,"humidity":41.5}'
+
+# Läs via REST:
+curl "http://localhost:3000/api/telemetry?limit=1"
+```
+
+---
+
+## ESP32 — exempel (inspiration, BLE-stil)
+
+> Den här snutten visar **stil** och struktur – anpassa till din kodbas (WiFi, topics, m.m.).
+
+```cpp
+#include <WiFi.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+
+BLEServer* pServer = nullptr;
+BLECharacteristic* pChar = nullptr;
+
+#define SERVICE_UUID        "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"   // UART-like
+#define CHARACTERISTIC_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"   // TX Notify
+
+void setup() {
+  Serial.begin(115200);
+  BLEDevice::init("ESP32-Gateway");
+
+  BLEServer* server = BLEDevice::createServer();
+  BLEService* service = server->createService(SERVICE_UUID);
+
+  pChar = service->createCharacteristic(
+      CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_NOTIFY
+  );
+  pChar->addDescriptor(new BLE2902());
+  service->start();
+
+  BLEAdvertising* adv = BLEDevice::getAdvertising();
+  adv->addServiceUUID(SERVICE_UUID);
+  adv->start();
+}
+
+void loop() {
+  // Exempel: skicka en liten JSON var 5 s (notify)
+  static unsigned long last = 0;
+  if (millis() - last > 5000) {
+    last = millis();
+    String json = "{\"deviceId\":\"uno-r4-01\",\"ts\":" + String(millis()/1000) +
+                  ",\"temperature\":22.8,\"humidity\":41.5}";
+    pChar->setValue((uint8_t*)json.c_str(), json.length());
+    pChar->notify();
+  }
+}
+```
+
+---
+
+## Vanliga npm-kommandon
+
+```bash
+npm ci        # ren installation från lockfile
+npm run dev   # utvecklingsläge (nodemon)
+npm start     # produktion
+npm test      # om tester finns
+```
+
+---
+
+## Felsökning
+
+- **401/403/ReceiverDisconnected** → ogiltig `AZURE_EVENTHUB_CONNECTION_STRING` / saknade rättigheter.  
+- **No such event hub** → fel `AZURE_EVENTHUB_NAME` (måste vara *Event Hub-name*, inte IoT Hub-namnet).  
+- **EADDRINUSE** → port upptagen; byt `PORT`.  
+- **Inget data** → verifiera flöde med `az iot hub monitor-events -n <hub> --consumer-group <grp>`, kontrollera consumer group och tidsformat.  
+- **CORS-fel** → sätt `CORS_ORIGIN="*"` i dev eller din domän i prod.
+
+---
+
+## Säkerhet & Git-hygien
+
+Lägg **aldrig** hemligheter i Git. Ignorera `.env`:
+
+```gitignore
+W_WebServer/.env
+.env
+```
+
+Valfritt i rot:
+
+```gitignore
+W_WebServer/node_modules/
+*.pem
+*.key
+*.pfx
+*.log
+```
+
+---
+
+## Repo-översikt (kort)
+
+- `C_ESP32_Gateway/` – ESP32-gateway  
+- `S_SensorNodes/`  – sensornoder (Arduino/UNO R4)  
+- `M_MobileUnit/`   – mobilklient  
+- `W_WebServer/`    – **denna backend**
+
+---
+
+## Licens
+
+MIT (om inget annat anges).
