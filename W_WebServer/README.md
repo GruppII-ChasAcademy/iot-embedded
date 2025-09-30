@@ -1,11 +1,10 @@
-# IoT GroupII – Climate-Controlled Logistics Monitor
-
-Detta är ett **IoT-system** som säkerställer **klimatkontrollerade leveranser** (t.ex. bananer).
-Systemet loggar **temperatur, luftfuktighet och GPS-position** under transport för spårbarhet och kvalitetskontroll.
-
----
-
-<img width="966" height="538" alt="infrastrukturbild" src="https://github.com/user-attachments/assets/32e21b1b-ff3a-49e1-ba2c-f6684bca03f2" />
+# ╔════════════════════════════════════════════════════════════════╗
+# ║                 WebServer · IoT → Backend (W)                  ║
+# ╟────────────────────────────────────────────────────────────────╢
+# ║  Tar emot sensordata • Normaliserar • Exponerar REST-API       ║
+# ║  Flöde: S (Sensor) → C (ESP32 Gateway) → W (WebServer) → UI    ║
+# ║  Lägen: MQTT lokalt | Azure IoT Hub / Event Hubs i molnet      ║
+# ╚════════════════════════════════════════════════════════════════╝
 
 ## System Overview
 
@@ -20,8 +19,8 @@ Systemet loggar **temperatur, luftfuktighet och GPS-position** under transport f
 ## Architecture (ASCII)
 
 ```
-[S_SensorNodes] --(BLE/WiFi)--> [C_ESP32_Gateway] --(MQTT)--> [W_WebServer] --(REST)--> [Dashboard]
-                                   \_____________________________________________________________/
+[S_SensorNodes] --(BLE/WiFi)--> [C_ESP32_Gateway] --(MQTT)--> [W_WebServer] --(REST)--> [Dashboard]-->[Backend]
+                                   \__________________________________________________________________________/
                                                        (Optional cloud: Azure IoT Hub/Event Hubs)
 ```
 
