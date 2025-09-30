@@ -4,7 +4,6 @@ Lättviktig Node-backend som tar emot telemetri från **Azure IoT Hub** (via **E
 Projektet ingår i IoT-helheten (S = SensorNodes, C = ESP32-Gateway, M = Mobile, W = WebServer).
 
 ## Arkitektur (Mermaid)
-
 ```mermaid
 flowchart LR
   S[Sensor Nodes<br/>(UNO R4 + DHT22)] -->|BLE/WiFi| G[ESP32 Gateway]
