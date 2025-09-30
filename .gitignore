@@ -1,0 +1,23 @@
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Arduino / PlatformIO
+.arduinoIDE/
+.platformio/
+.pio/
+*.elf
+*.hex
+
+# Node (W_WebServer)
+W_WebServer/node_modules/
+W_WebServer/.env
+
+# Env/keys
+.env
+*.env
+*.key
+*.pem
+
+*.log
