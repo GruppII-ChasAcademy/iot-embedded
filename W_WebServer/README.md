@@ -107,23 +107,30 @@ M_MobileUnit/      # (valfritt) mobilklient
 
 ---
 
-## Web Server (W) – Quick Start
+## Web Server (W) – Quick Start (MQTT-läge)
+
+Kör den riktiga backendservern som lyssnar på din MQTT-broker (ESP32-gateway eller PC-broker).
 
 ```bash
 cd W_WebServer
-npm ci                  # eller: npm install
-# .env (lokalt MQTT-exempel):
+npm ci
+# .env (exempel för lokal MQTT):
 # PORT=3000
 # CORS_ORIGIN=*
 # USE_AZURE=false
 # MQTT_URL="mqtt://<gateway-ip>:1883"
 # MQTT_TOPIC="sensors/#"
 npm run dev
-curl http://localhost:3000/health
 ```
-
+Verifiera (använd samma port som i .env, t.ex. 3000 eller vilken som den automatiskt identiferar):
+```bash
+curl "http://localhost:3000/health"
+curl "http://localhost:3000/api/telemetry?limit=10"
+```
 > För Azure-läge: fyll i `AZURE_EVENTHUB_CONNECTION_STRING`, `AZURE_EVENTHUB_NAME`, `AZURE_CONSUMER_GROUP`
 > och sätt `USE_AZURE=true`.
+> Telemetry stöder: `limit` (max **500**), `deviceId`, `devicePrefix`, `from`, `to`, `packet`, `packetFrom`, `packetTo`, `sort=asc|desc` (default `asc`).
+
 
 ---
 
