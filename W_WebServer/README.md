@@ -27,7 +27,8 @@
 ### Payload (exempel)
 Paket 1
 
-<img width="687" height="358" alt="paket1" src="https://github.com/user-attachments/assets/080420b5-6c46-43e5-8178-ea1d3e509258" />
+<img width="779" height="294" alt="paket1" src="https://github.com/user-attachments/assets/88ae9105-5be5-4952-9c85-a6f396dd46e3" />
+
 Paket 10
 
 <img width="1920" height="257" alt="paket10" src="https://github.com/user-attachments/assets/87178ee1-c0f2-4fe1-b48f-627293e5968c" />
@@ -39,7 +40,7 @@ Då det är 100 paket som man ska kunna analysera
 
 ### Start in 30s
 ```bash
-node -e 'const http=require("http"),url=require("url"),cp=require("child_process");let store=[];const JSONH={"Content-Type":"application/json"};const handler=(req,res)=>{const u=url.parse(req.url,true),p=(u.pathname||"/").replace(/\/+/g,"/"),q=u.query;if(p==="/"){res.writeHead(200,{"Content-Type":"text/plain"});return res.end("OK – /health, /api/telemetry?limit=100&deviceId=uno-r4-01&sort=asc");}if(p==="/health"){res.writeHead(200,JSONH);return res.end(JSON.stringify({status:"ok",count:store.length,uptime:process.uptime()}));}if(p==="/api/telemetry"){let items=store.slice();const toS=s=>s?Math.floor(Date.parse(s)/1000):null;if(q.deviceId)items=items.filter(x=>x.deviceId===q.deviceId);if(q.from)items=items.filter(x=>x.ts>=toS(q.from));if(q.to)items=items.filter(x=>x.ts<=toS(q.to));const limit=Math.min(parseInt(q.limit||"50",10),500);items=q.sort==="asc"?items.slice(-limit):items.slice(-limit).reverse();res.writeHead(200,JSONH);return res.end(JSON.stringify(items));}if(p==="/ingest"&&req.method==="POST"){let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{const o=JSON.parse(body||"{}");if(!o.deviceId){res.writeHead(400,JSONH);return res.end(JSON.stringify({error:"deviceId saknas"}));}if(!o.ts)o.ts=Math.floor(Date.now()/1000);store.push(o);res.writeHead(200,JSONH);res.end(JSON.stringify({ok:true,stored:o}));}catch(e){res.writeHead(400,JSONH);res.end(JSON.stringify({error:"bad json"}));}});return;}res.writeHead(404,JSONH);res.end(JSON.stringify({error:"not found"}));};const ports=[3001,3000,0];(function boot(){const p=ports.shift();const srv=http.createServer(handler);srv.on("error",e=>{if(e.code==="EADDRINUSE"&&ports.length){console.log("[HTTP]",p,"upptagen – provar nästa...");setTimeout(boot,50);}else{console.error(e);process.exit(1);}});srv.listen(p,()=>{const port=srv.address().port;console.log("HTTP http://localhost:"+port);let i=0;(function seed(){if(++i>100){const asc="http://localhost:"+port+"/api/telemetry?limit=100&deviceId=uno-r4-01&sort=asc";console.log("✔ Seed klart (1→100). Öppnar",asc);try{if(process.platform==="win32")cp.spawn("powershell",["-NoProfile","Start-Process",asc],{stdio:"ignore",detached:true}).unref();}catch{}return;}const body=JSON.stringify({deviceId:"uno-r4-01",ts:Math.floor(Date.now()/1000)+i,temperature:+(20+i/10).toFixed(1),humidity:+(40+i/10).toFixed(1),packet:i,label:"Paket "+i});const r=http.request({hostname:"localhost",port,path:"/ingest",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},rs=>{rs.on("data",()=>{});rs.on("end",()=>seed());});r.on("error",()=>seed());r.write(body);r.end();})();});})();'
+node -e 'const http=require("http"),url=require("url"),cp=require("child_process");let store=[];const JSONH={"Content-Type":"application/json"};const handler=(req,res)=>{const u=url.parse(req.url,true),p=(u.pathname||"/").replace(/\/+/g,"/"),q=u.query;if(p==="/"){res.writeHead(200,{"Content-Type":"text/plain"});return res.end("OK - /health, /api/telemetry?limit=100&deviceId=uno-r4-01&sort=asc|desc");}if(p==="/health"){res.writeHead(200,JSONH);return res.end(JSON.stringify({status:"ok",count:store.length,uptime:process.uptime()}));}if(p==="/api/telemetry"){let items=store.slice();const toS=s=>s?Math.floor(Date.parse(s)/1000):null;if(q.deviceId)items=items.filter(x=>x.deviceId===q.deviceId);if(q.from)items=items.filter(x=>x.ts>=toS(q.from));if(q.to)items=items.filter(x=>x.ts<=toS(q.to));const limit=Math.min(parseInt(q.limit||"50",10),500);items.sort((a,b)=>(a.ts||0)-(b.ts||0)||(a.packet||0)-(b.packet||0));const dir=(q.sort||"asc").toLowerCase();const out=dir==="desc"?items.slice(-limit).reverse():items.slice(0,limit);res.writeHead(200,JSONH);return res.end(JSON.stringify(out));}if(p==="/ingest"&&req.method==="POST"){let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{const o=JSON.parse(body||"{}");if(!o.deviceId){res.writeHead(400,JSONH);return res.end(JSON.stringify({error:"deviceId saknas"}));}if(!o.ts)o.ts=Math.floor(Date.now()/1000);store.push(o);res.writeHead(200,JSONH);res.end(JSON.stringify({ok:true,stored:o}));}catch(e){res.writeHead(400,JSONH);res.end(JSON.stringify({error:"bad json"}));}});return;}res.writeHead(404,JSONH);res.end(JSON.stringify({error:"not found"}));};const ports=[3001,3000,0];(function boot(){const p=ports.shift();const srv=http.createServer(handler);srv.on("error",e=>{if(e.code==="EADDRINUSE"&&ports.length){console.log("[HTTP]",p,"upptagen – provar nästa...");setTimeout(boot,50);}else{console.error(e);process.exit(1);}});srv.listen(p,()=>{const port=srv.address().port;console.log("HTTP http://localhost:"+port);let i=0;(function seed(){if(++i>100){const asc="http://localhost:"+port+"/api/telemetry?limit=100&deviceId=uno-r4-01&sort=asc";console.log("Seed klart (1→100). Öppna:",asc);try{if(process.platform==="win32")cp.spawn("powershell",["-NoProfile","Start-Process",asc],{stdio:"ignore",detached:true}).unref();}catch{}return;}const o={deviceId:"uno-r4-01",ts:Math.floor(Date.now()/1000)+i,temperature:+(20+i/10).toFixed(1),humidity:+(40+i/10).toFixed(1),packet:i,label:"Paket "+i};const body=JSON.stringify(o);const r=http.request({hostname:"localhost",port,path:"/ingest",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},rs=>{rs.on("data",()=>{});rs.on("end",()=>seed());});r.on("error",()=>seed());r.write(body);r.end();})();});})();'
 
 ```
 ## Architecture (ASCII)
@@ -181,14 +182,30 @@ void publishOnce() {
 ### A) Snabb demo utan hårdvara (REST)
 1. Starta servern (one-liner) – den seedar själv Paket 1→100 och öppnar rätt URL.  
    *(Se avsnittet “Quick start / one-liner” ovan.)*
-2. Verifiera:
+3. Verifiera:
    ```bash
    curl "http://localhost:<port>/health"
-   curl "http://localhost:<port>/api/telemetry?limit=10&deviceId=uno-r4-01"          # nyast→äldst
-   curl "http://localhost:<port>/api/telemetry?limit=10&deviceId=uno-r4-01&sort=asc" # äldst→nyast
-<img width="568" height="154" alt="Menu" src="https://github.com/user-attachments/assets/7671c111-9b33-4299-bc57-1265775d3bc9" />
-
+   curl "http://localhost:<port>/api/telemetry?limit=10&deviceId=uno-r4-01](http://localhost:3000/api/telemetry?sort=asc&limit=10&deviceId=uno-r4-01"          # nyast→äldst
+   curl "http://localhost:<port>/api/telemetry?limit=10&deviceId=uno-r4-01&sort=asc](http://localhost:3000/api/telemetry?sort=desc&limit=10&limit=10&deviceId=uno-r4-01" # äldst→nyast
 ---
+  <img width="568" height="154" alt="Menu" src="https://github.com/user-attachments/assets/7671c111-9b33-4299-bc57-1265775d3bc9" />
+
+### Sortering (exempel)
+
+`/api/telemetry` sorterar alltid på tid (`ts`).  
+- `sort=asc` → stigande (äldst → nyast)  
+- `sort=desc` → fallande (nyast → äldre)  
+- Utelämnad `sort` = **asc** som standard.
+
+**Exempel (för `deviceId=uno-r4-01`, `limit=10`):**
+- `?sort=asc&limit=10`  ⇒ visar **Paket 1..10**
+<img width="930" height="972" alt="paket10till1" src="https://github.com/user-attachments/assets/7847ad57-4e30-46d0-ae3a-e934d94dff34" />
+
+- `?sort=desc&limit=10` ⇒ visar **Paket 100..91**
+
+<img width="884" height="941" alt="paket1till10" src="https://github.com/user-attachments/assets/17428a6f-b1d6-4cb1-bfd3-669bd52bbb02" />
+
+
 
 ## Notes
 
