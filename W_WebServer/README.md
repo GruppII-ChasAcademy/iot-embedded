@@ -25,11 +25,22 @@
 > **`sensors/<deviceId>`** och payloaden kan vara samma JSON som för `/ingest`.
 
 ### Payload (exempel)
+
 Paket 1
+
 <img width="755" height="292" alt="1enhet" src="https://github.com/user-attachments/assets/c54b1984-ee93-4233-931f-ff6f4486ae6a" />
-En specfik Paket 
+
+En specfik Paket "PAKET 10"
+
+<img width="921" height="719" alt="Specfiktpaket10" src="https://github.com/user-attachments/assets/60976ca0-274e-4e58-9733-590472f947c3" />
+
+En specfik Paket "PAKET 77"
+
+<img width="869" height="744" alt="Specfiktpaket77" src="https://github.com/user-attachments/assets/484af529-871f-4a8e-b54f-35d900d30f45" />
+
 
 Paket 10
+
 <img width="1801" height="230" alt="10enheter" src="https://github.com/user-attachments/assets/dd2951b0-f07e-4960-8bba-27d1d85d717e" />
 Paket 50
 <img width="1800" height="516" alt="50enhter" src="https://github.com/user-attachments/assets/d94ac13b-409c-43d3-9075-7fe41342ebc5" />
@@ -42,6 +53,29 @@ Då det är 100 paket som man ska kunna analysera
 ```bash
 node -e 'const http=require("http"),url=require("url"),cp=require("child_process");let store=[];const J={"Content-Type":"application/json"};function handler(req,res){const u=url.parse(req.url,true),p=(u.pathname||"/").replace(/\/+/g,"/"),q=u.query;if(p==="/"){res.writeHead(200,{"Content-Type":"text/plain"});return res.end("OK - /health, /api/telemetry?limit=100&sort=asc|desc  (ta bort deviceId för ALLA enheter)");}if(p==="/health"){res.writeHead(200,J);return res.end(JSON.stringify({status:"ok",count:store.length,uptime:process.uptime()}));}if(p==="/api/telemetry"){let items=store.slice();const toS=s=>s?Math.floor(Date.parse(s)/1000):null;if(q.deviceId)items=items.filter(x=>x.deviceId===q.deviceId);if(q.from)items=items.filter(x=>x.ts>=toS(q.from));if(q.to)items=items.filter(x=>x.ts<=toS(q.to));const limit=Math.min(parseInt(q.limit||"50",10),500);items.sort((a,b)=>(a.ts||0)-(b.ts||0)||(a.packet||0)-(b.packet||0));const dir=(q.sort||"asc").toLowerCase();const out=dir==="desc"?items.slice(-limit).reverse():items.slice(0,limit);res.writeHead(200,J);return res.end(JSON.stringify(out));}if(p==="/ingest"&&req.method==="POST"){let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{const o=JSON.parse(body||"{}");if(!o.deviceId){res.writeHead(400,J);return res.end(JSON.stringify({error:"deviceId saknas"}));}if(!o.ts)o.ts=Math.floor(Date.now()/1000);store.push(o);res.writeHead(200,J);res.end(JSON.stringify({ok:true,stored:o}));}catch(e){res.writeHead(400,J);res.end(JSON.stringify({error:"bad json"}));}});return;}res.writeHead(404,J);res.end(JSON.stringify({error:"not found"}));}const ports=[3001,3000,0];(function boot(){const p=ports.shift(),srv=http.createServer(handler);srv.on("error",e=>{if(e.code==="EADDRINUSE"&&ports.length){console.log("[HTTP]",p,"upptagen – provar nästa...");setTimeout(boot,50);}else{console.error(e);process.exit(1);}});srv.listen(p,()=>{const port=srv.address().port;console.log("HTTP http://localhost:"+port);let i=0;const N=100,base=Math.floor(Date.now()/1000);(function seed(){if(++i>N){const all="http://localhost:"+port+"/api/telemetry?limit=100&sort=asc";console.log("✔ Seed klart (100 enheter). Öppna:",all);try{if(process.platform==="win32")cp.spawn("powershell",["-NoProfile","Start-Process",all],{stdio:"ignore",detached:true}).unref();}catch{}return;}const dev="uno-r4-"+String(i).padStart(3,"0");const o={deviceId:dev,ts:base+i,temperature:+(25+i*0.1).toFixed(1),humidity:+(45+i*0.1).toFixed(1),packet:1,label:"Paket 1 ("+dev+")"};const body=JSON.stringify(o);const r=http.request({hostname:"localhost",port,path:"/ingest",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},rs=>{rs.on("data",()=>{});rs.on("end",()=>seed());});r.on("error",()=>seed());r.write(body);r.end();})();});})();'
 '
+```
+### Exempel-URL:er
+
+- **Alla enheter (stigande):**  
+  `http://localhost:<port>/api/telemetry?limit=100&sort=asc`
+
+- **Bara “Arduino”-enheter (prefix):**  
+  `http://localhost:<port>/api/telemetry?devicePrefix=uno-r4-&limit=50&sort=asc`
+
+- **Exakt en enhet:**  
+  `http://localhost:<port>/api/telemetry?deviceId=uno-r4-002&limit=10&sort=asc`
+
+- **Specifikt paket (alla enheter):**  
+  `http://localhost:<port>/api/telemetry?packet=3&sort=asc`
+
+- **Specifikt paket för en enhet:**  
+  `http://localhost:<port>/api/telemetry?deviceId=uno-r4-003&packet=3`
+
+- **Paketintervall (t.ex. 2–5) för alla enheter med prefix:**  
+  `http://localhost:<port>/api/telemetry?devicePrefix=uno-r4-&packetFrom=2&packetTo=5&sort=asc`
+
+```
+
 
 ```
 ## Architecture (ASCII)
