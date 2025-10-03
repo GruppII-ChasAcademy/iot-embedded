@@ -26,21 +26,22 @@
 
 ### Payload (exempel)
 Paket 1
-
-<img width="779" height="294" alt="paket1" src="https://github.com/user-attachments/assets/88ae9105-5be5-4952-9c85-a6f396dd46e3" />
+<img width="755" height="292" alt="1enhet" src="https://github.com/user-attachments/assets/c54b1984-ee93-4233-931f-ff6f4486ae6a" />
+En specfik Paket 
 
 Paket 10
-
-<img width="1920" height="257" alt="paket10" src="https://github.com/user-attachments/assets/87178ee1-c0f2-4fe1-b48f-627293e5968c" />
+<img width="1801" height="230" alt="10enheter" src="https://github.com/user-attachments/assets/dd2951b0-f07e-4960-8bba-27d1d85d717e" />
 Paket 50
-<img width="1913" height="643" alt="paket50'" src="https://github.com/user-attachments/assets/a1cb235d-c10d-4f10-8c41-70d28017fba7" />
+<img width="1800" height="516" alt="50enhter" src="https://github.com/user-attachments/assets/d94ac13b-409c-43d3-9075-7fe41342ebc5" />
 Paket 100
-<img width="1596" height="842" alt="paket100" src="https://github.com/user-attachments/assets/954b60dc-86ad-443b-b34f-1f715c44ce81" />
+<img width="1754" height="836" alt="100enheter" src="https://github.com/user-attachments/assets/bdf33853-5b10-480d-b05f-92db4bb503e9" />
+
 Då det är 100 paket som man ska kunna analysera
 
 ### Start in 30s
 ```bash
-node -e 'const http=require("http"),url=require("url"),cp=require("child_process");let store=[];const JSONH={"Content-Type":"application/json"};const handler=(req,res)=>{const u=url.parse(req.url,true),p=(u.pathname||"/").replace(/\/+/g,"/"),q=u.query;if(p==="/"){res.writeHead(200,{"Content-Type":"text/plain"});return res.end("OK - /health, /api/telemetry?limit=100&deviceId=uno-r4-01&sort=asc|desc");}if(p==="/health"){res.writeHead(200,JSONH);return res.end(JSON.stringify({status:"ok",count:store.length,uptime:process.uptime()}));}if(p==="/api/telemetry"){let items=store.slice();const toS=s=>s?Math.floor(Date.parse(s)/1000):null;if(q.deviceId)items=items.filter(x=>x.deviceId===q.deviceId);if(q.from)items=items.filter(x=>x.ts>=toS(q.from));if(q.to)items=items.filter(x=>x.ts<=toS(q.to));const limit=Math.min(parseInt(q.limit||"50",10),500);items.sort((a,b)=>(a.ts||0)-(b.ts||0)||(a.packet||0)-(b.packet||0));const dir=(q.sort||"asc").toLowerCase();const out=dir==="desc"?items.slice(-limit).reverse():items.slice(0,limit);res.writeHead(200,JSONH);return res.end(JSON.stringify(out));}if(p==="/ingest"&&req.method==="POST"){let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{const o=JSON.parse(body||"{}");if(!o.deviceId){res.writeHead(400,JSONH);return res.end(JSON.stringify({error:"deviceId saknas"}));}if(!o.ts)o.ts=Math.floor(Date.now()/1000);store.push(o);res.writeHead(200,JSONH);res.end(JSON.stringify({ok:true,stored:o}));}catch(e){res.writeHead(400,JSONH);res.end(JSON.stringify({error:"bad json"}));}});return;}res.writeHead(404,JSONH);res.end(JSON.stringify({error:"not found"}));};const ports=[3001,3000,0];(function boot(){const p=ports.shift();const srv=http.createServer(handler);srv.on("error",e=>{if(e.code==="EADDRINUSE"&&ports.length){console.log("[HTTP]",p,"upptagen – provar nästa...");setTimeout(boot,50);}else{console.error(e);process.exit(1);}});srv.listen(p,()=>{const port=srv.address().port;console.log("HTTP http://localhost:"+port);let i=0;(function seed(){if(++i>100){const asc="http://localhost:"+port+"/api/telemetry?limit=100&deviceId=uno-r4-01&sort=asc";console.log("Seed klart (1→100). Öppna:",asc);try{if(process.platform==="win32")cp.spawn("powershell",["-NoProfile","Start-Process",asc],{stdio:"ignore",detached:true}).unref();}catch{}return;}const o={deviceId:"uno-r4-01",ts:Math.floor(Date.now()/1000)+i,temperature:+(20+i/10).toFixed(1),humidity:+(40+i/10).toFixed(1),packet:i,label:"Paket "+i};const body=JSON.stringify(o);const r=http.request({hostname:"localhost",port,path:"/ingest",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},rs=>{rs.on("data",()=>{});rs.on("end",()=>seed());});r.on("error",()=>seed());r.write(body);r.end();})();});})();'
+node -e 'const http=require("http"),url=require("url"),cp=require("child_process");let store=[];const J={"Content-Type":"application/json"};function handler(req,res){const u=url.parse(req.url,true),p=(u.pathname||"/").replace(/\/+/g,"/"),q=u.query;if(p==="/"){res.writeHead(200,{"Content-Type":"text/plain"});return res.end("OK - /health, /api/telemetry?limit=100&sort=asc|desc  (ta bort deviceId för ALLA enheter)");}if(p==="/health"){res.writeHead(200,J);return res.end(JSON.stringify({status:"ok",count:store.length,uptime:process.uptime()}));}if(p==="/api/telemetry"){let items=store.slice();const toS=s=>s?Math.floor(Date.parse(s)/1000):null;if(q.deviceId)items=items.filter(x=>x.deviceId===q.deviceId);if(q.from)items=items.filter(x=>x.ts>=toS(q.from));if(q.to)items=items.filter(x=>x.ts<=toS(q.to));const limit=Math.min(parseInt(q.limit||"50",10),500);items.sort((a,b)=>(a.ts||0)-(b.ts||0)||(a.packet||0)-(b.packet||0));const dir=(q.sort||"asc").toLowerCase();const out=dir==="desc"?items.slice(-limit).reverse():items.slice(0,limit);res.writeHead(200,J);return res.end(JSON.stringify(out));}if(p==="/ingest"&&req.method==="POST"){let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{const o=JSON.parse(body||"{}");if(!o.deviceId){res.writeHead(400,J);return res.end(JSON.stringify({error:"deviceId saknas"}));}if(!o.ts)o.ts=Math.floor(Date.now()/1000);store.push(o);res.writeHead(200,J);res.end(JSON.stringify({ok:true,stored:o}));}catch(e){res.writeHead(400,J);res.end(JSON.stringify({error:"bad json"}));}});return;}res.writeHead(404,J);res.end(JSON.stringify({error:"not found"}));}const ports=[3001,3000,0];(function boot(){const p=ports.shift(),srv=http.createServer(handler);srv.on("error",e=>{if(e.code==="EADDRINUSE"&&ports.length){console.log("[HTTP]",p,"upptagen – provar nästa...");setTimeout(boot,50);}else{console.error(e);process.exit(1);}});srv.listen(p,()=>{const port=srv.address().port;console.log("HTTP http://localhost:"+port);let i=0;const N=100,base=Math.floor(Date.now()/1000);(function seed(){if(++i>N){const all="http://localhost:"+port+"/api/telemetry?limit=100&sort=asc";console.log("✔ Seed klart (100 enheter). Öppna:",all);try{if(process.platform==="win32")cp.spawn("powershell",["-NoProfile","Start-Process",all],{stdio:"ignore",detached:true}).unref();}catch{}return;}const dev="uno-r4-"+String(i).padStart(3,"0");const o={deviceId:dev,ts:base+i,temperature:+(25+i*0.1).toFixed(1),humidity:+(45+i*0.1).toFixed(1),packet:1,label:"Paket 1 ("+dev+")"};const body=JSON.stringify(o);const r=http.request({hostname:"localhost",port,path:"/ingest",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},rs=>{rs.on("data",()=>{});rs.on("end",()=>seed());});r.on("error",()=>seed());r.write(body);r.end();})();});})();'
+'
 
 ```
 ## Architecture (ASCII)
@@ -199,11 +200,13 @@ void publishOnce() {
 
 **Exempel (för `deviceId=uno-r4-01`, `limit=10`):**
 - `?sort=asc&limit=10`  ⇒ visar **Paket 1..10**
-<img width="930" height="972" alt="paket10till1" src="https://github.com/user-attachments/assets/7847ad57-4e30-46d0-ae3a-e934d94dff34" />
+<img width="612" height="827" alt="paket1till10" src="https://github.com/user-attachments/assets/f6841ece-755f-4742-8a94-2a387c16656e" />
+
 
 - `?sort=desc&limit=10` ⇒ visar **Paket 100..91**
 
-<img width="884" height="941" alt="paket1till10" src="https://github.com/user-attachments/assets/17428a6f-b1d6-4cb1-bfd3-669bd52bbb02" />
+<img width="604" height="938" alt="paket10till1" src="https://github.com/user-attachments/assets/c84f0032-70ad-4590-b0d2-29438770a593" />
+
 
 
 
