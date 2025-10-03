@@ -188,7 +188,7 @@ void publishOnce() {
    curl "http://localhost:<port>/api/telemetry?limit=10&deviceId=uno-r4-01](http://localhost:3000/api/telemetry?sort=asc&limit=10&deviceId=uno-r4-01"          # nyast→äldst
    curl "http://localhost:<port>/api/telemetry?limit=10&deviceId=uno-r4-01&sort=asc](http://localhost:3000/api/telemetry?sort=desc&limit=10&limit=10&deviceId=uno-r4-01" # äldst→nyast
 ---
-  <img width="568" height="154" alt="Menu" src="https://github.com/user-attachments/assets/7671c111-9b33-4299-bc57-1265775d3bc9" />
+<img width="567" height="152" alt="Menu" src="https://github.com/user-attachments/assets/a67cde50-5754-4094-9d50-64a98cf295ab" />
 
 ### Sortering (exempel)
 
