@@ -39,12 +39,12 @@ En specfik Paket "PAKET 77"
 <img width="869" height="744" alt="Specfiktpaket77" src="https://github.com/user-attachments/assets/484af529-871f-4a8e-b54f-35d900d30f45" />
 
 
-Paket 10
+10st paket som visas
 
 <img width="1801" height="230" alt="10enheter" src="https://github.com/user-attachments/assets/dd2951b0-f07e-4960-8bba-27d1d85d717e" />
-Paket 50
+50st paket som visas
 <img width="1800" height="516" alt="50enhter" src="https://github.com/user-attachments/assets/d94ac13b-409c-43d3-9075-7fe41342ebc5" />
-Paket 100
+100st paket som visas
 <img width="1754" height="836" alt="100enheter" src="https://github.com/user-attachments/assets/bdf33853-5b10-480d-b05f-92db4bb503e9" />
 
 Då det är 100 paket som man ska kunna analysera
