@@ -49,11 +49,7 @@ En specfik Paket "PAKET 77"
 
 Då det är 100 paket som man ska kunna analysera
 
-### Start in 30s
-```bash
-node -e 'const http=require("http"),url=require("url"),cp=require("child_process");let store=[];const J={"Content-Type":"application/json"};function handler(req,res){const u=url.parse(req.url,true),p=(u.pathname||"/").replace(/\/+/g,"/"),q=u.query;if(p==="/"){res.writeHead(200,{"Content-Type":"text/plain"});return res.end("OK - /health, /api/telemetry?limit=100&sort=asc|desc  (ta bort deviceId för ALLA enheter)");}if(p==="/health"){res.writeHead(200,J);return res.end(JSON.stringify({status:"ok",count:store.length,uptime:process.uptime()}));}if(p==="/api/telemetry"){let items=store.slice();const toS=s=>s?Math.floor(Date.parse(s)/1000):null;if(q.deviceId)items=items.filter(x=>x.deviceId===q.deviceId);if(q.from)items=items.filter(x=>x.ts>=toS(q.from));if(q.to)items=items.filter(x=>x.ts<=toS(q.to));const limit=Math.min(parseInt(q.limit||"50",10),500);items.sort((a,b)=>(a.ts||0)-(b.ts||0)||(a.packet||0)-(b.packet||0));const dir=(q.sort||"asc").toLowerCase();const out=dir==="desc"?items.slice(-limit).reverse():items.slice(0,limit);res.writeHead(200,J);return res.end(JSON.stringify(out));}if(p==="/ingest"&&req.method==="POST"){let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{const o=JSON.parse(body||"{}");if(!o.deviceId){res.writeHead(400,J);return res.end(JSON.stringify({error:"deviceId saknas"}));}if(!o.ts)o.ts=Math.floor(Date.now()/1000);store.push(o);res.writeHead(200,J);res.end(JSON.stringify({ok:true,stored:o}));}catch(e){res.writeHead(400,J);res.end(JSON.stringify({error:"bad json"}));}});return;}res.writeHead(404,J);res.end(JSON.stringify({error:"not found"}));}const ports=[3001,3000,0];(function boot(){const p=ports.shift(),srv=http.createServer(handler);srv.on("error",e=>{if(e.code==="EADDRINUSE"&&ports.length){console.log("[HTTP]",p,"upptagen – provar nästa...");setTimeout(boot,50);}else{console.error(e);process.exit(1);}});srv.listen(p,()=>{const port=srv.address().port;console.log("HTTP http://localhost:"+port);let i=0;const N=100,base=Math.floor(Date.now()/1000);(function seed(){if(++i>N){const all="http://localhost:"+port+"/api/telemetry?limit=100&sort=asc";console.log("✔ Seed klart (100 enheter). Öppna:",all);try{if(process.platform==="win32")cp.spawn("powershell",["-NoProfile","Start-Process",all],{stdio:"ignore",detached:true}).unref();}catch{}return;}const dev="uno-r4-"+String(i).padStart(3,"0");const o={deviceId:dev,ts:base+i,temperature:+(25+i*0.1).toFixed(1),humidity:+(45+i*0.1).toFixed(1),packet:1,label:"Paket 1 ("+dev+")"};const body=JSON.stringify(o);const r=http.request({hostname:"localhost",port,path:"/ingest",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},rs=>{rs.on("data",()=>{});rs.on("end",()=>seed());});r.on("error",()=>seed());r.write(body);r.end();})();});})();'
-'
-```
+``
 ### Exempel-URL:er
 
 - **Alla enheter (stigande):**  
@@ -94,7 +90,11 @@ Spinnar upp en **egen mini-server** som exponerar `/health`, `/api/telemetry`, `
 - **Verifiera:** öppna `http://localhost:<port>/health` och `…/api/telemetry?limit=100&sort=asc`.
 
 > Klistra in one-linern här under rubriken om du vill ha en “kör och visa”-demo.
-
+### Start in 30s
+```bash
+node -e 'const http=require("http"),url=require("url"),cp=require("child_process");let store=[];const J={"Content-Type":"application/json"};function handler(req,res){const u=url.parse(req.url,true),p=(u.pathname||"/").replace(/\/+/g,"/"),q=u.query;if(p==="/"){res.writeHead(200,{"Content-Type":"text/plain"});return res.end("OK - /health, /api/telemetry?limit=100&sort=asc|desc  (ta bort deviceId för ALLA enheter)");}if(p==="/health"){res.writeHead(200,J);return res.end(JSON.stringify({status:"ok",count:store.length,uptime:process.uptime()}));}if(p==="/api/telemetry"){let items=store.slice();const toS=s=>s?Math.floor(Date.parse(s)/1000):null;if(q.deviceId)items=items.filter(x=>x.deviceId===q.deviceId);if(q.from)items=items.filter(x=>x.ts>=toS(q.from));if(q.to)items=items.filter(x=>x.ts<=toS(q.to));const limit=Math.min(parseInt(q.limit||"50",10),500);items.sort((a,b)=>(a.ts||0)-(b.ts||0)||(a.packet||0)-(b.packet||0));const dir=(q.sort||"asc").toLowerCase();const out=dir==="desc"?items.slice(-limit).reverse():items.slice(0,limit);res.writeHead(200,J);return res.end(JSON.stringify(out));}if(p==="/ingest"&&req.method==="POST"){let body="";req.on("data",c=>body+=c);req.on("end",()=>{try{const o=JSON.parse(body||"{}");if(!o.deviceId){res.writeHead(400,J);return res.end(JSON.stringify({error:"deviceId saknas"}));}if(!o.ts)o.ts=Math.floor(Date.now()/1000);store.push(o);res.writeHead(200,J);res.end(JSON.stringify({ok:true,stored:o}));}catch(e){res.writeHead(400,J);res.end(JSON.stringify({error:"bad json"}));}});return;}res.writeHead(404,J);res.end(JSON.stringify({error:"not found"}));}const ports=[3001,3000,0];(function boot(){const p=ports.shift(),srv=http.createServer(handler);srv.on("error",e=>{if(e.code==="EADDRINUSE"&&ports.length){console.log("[HTTP]",p,"upptagen – provar nästa...");setTimeout(boot,50);}else{console.error(e);process.exit(1);}});srv.listen(p,()=>{const port=srv.address().port;console.log("HTTP http://localhost:"+port);let i=0;const N=100,base=Math.floor(Date.now()/1000);(function seed(){if(++i>N){const all="http://localhost:"+port+"/api/telemetry?limit=100&sort=asc";console.log("✔ Seed klart (100 enheter). Öppna:",all);try{if(process.platform==="win32")cp.spawn("powershell",["-NoProfile","Start-Process",all],{stdio:"ignore",detached:true}).unref();}catch{}return;}const dev="uno-r4-"+String(i).padStart(3,"0");const o={deviceId:dev,ts:base+i,temperature:+(25+i*0.1).toFixed(1),humidity:+(45+i*0.1).toFixed(1),packet:1,label:"Paket 1 ("+dev+")"};const body=JSON.stringify(o);const r=http.request({hostname:"localhost",port,path:"/ingest",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},rs=>{rs.on("data",()=>{});rs.on("end",()=>seed());});r.on("error",()=>seed());r.write(body);r.end();})();});})();'
+```
+> Telemetry stöder: `limit` (max **500**), `deviceId`, `devicePrefix`, `from`, `to`, `packet`, `packetFrom`, `packetTo`, `sort=asc|desc` (default `asc`).
 ---
 
 ### B) MQTT-seed (simulerade enheter via broker)
@@ -110,6 +110,21 @@ Publicerar **100 enheter** (`uno-r4-001 … uno-r4-100`) till `sensors/<deviceId
   - Prefix: `…/api/telemetry?devicePrefix=uno-r4-&limit=50&sort=asc`
   - En enhet: `…/api/telemetry?deviceId=uno-r4-002&limit=10&sort=asc`
   - Paket: `…/api/telemetry?packet=3&sort=asc`
+  ## Azure (molnläge)
+  Transport: I Azure-läget använder backenden Event Hubs (AMQP/TLS) – inte MQTT
+```
+USE_AZURE=true
+PORT=3000
+CORS_ORIGIN=*
+AZURE_EVENTHUB_CONNECTION_STRING="Endpoint=sb://...;SharedAccessKey=..."
+AZURE_EVENTHUB_NAME="<event-hub-namn>"
+AZURE_CONSUMER_GROUP="$Default"
+```
+
+- Node.js **18+** och **npm** (för W_WebServer)  
+- Azure IoT Hub med **Built-in endpoints** (om molnflöde används)  
+- Mosquitto eller annan **MQTT-broker** (för lokalt läge)
+
 
 > Klistra in ditt **MQTT-seed-block** här. Påminn om att ändra `BROKER` om brokern inte kör lokalt.
 
@@ -144,7 +159,7 @@ M_MobileUnit/      # (valfritt) mobilklient
 
 ## Web Server (W) – Quick Start (MQTT-läge)
 
-Kör den riktiga backendservern som lyssnar på din MQTT-broker (ESP32-gateway eller PC-broker).
+1. Kör den riktiga backendservern som lyssnar på din MQTT-broker (ESP32-gateway eller PC-broker).
 
 ```bash
 cd W_WebServer
@@ -157,7 +172,15 @@ npm ci
 # MQTT_TOPIC="sensors/#"
 npm run dev
 ```
-Verifiera (använd samma port som i .env, t.ex. 3000 eller vilken som den automatiskt identiferar):
+2. Installera & starta
+
+```bash
+cd W_WebServer
+npm ci            # använd `npm install` om du saknar package-lock.json
+npm run dev       # förutsätter att "dev" finns i package.json
+# alternativ: node server.js   (om du inte har en dev-script)
+```
+3. Verifiera (använd samma port som i .env, t.ex. 3000 eller vilken som den automatiskt identiferar):
 ```bash
 curl "http://localhost:3000/health"
 curl "http://localhost:3000/api/telemetry?limit=10"
