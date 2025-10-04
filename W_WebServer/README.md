@@ -59,6 +59,9 @@ node -e 'const http=require("http"),url=require("url"),cp=require("child_process
 - **Alla enheter (stigande):**  
   `http://localhost:<port>/api/telemetry?limit=100&sort=asc`
 
+- **Alla enheter (fallande):**  
+  `http://localhost:<port>/api/telemetry?limit=100&sort=desc`
+
 - **Bara “Arduino”-enheter (prefix):**  
   `http://localhost:<port>/api/telemetry?devicePrefix=uno-r4-&limit=50&sort=asc`
 
@@ -69,22 +72,54 @@ node -e 'const http=require("http"),url=require("url"),cp=require("child_process
   `http://localhost:<port>/api/telemetry?packet=3&sort=asc`
 
 - **Specifikt paket för en enhet:**  
-  `http://localhost:<port>/api/telemetry?deviceId=uno-r4-003&packet=3`
+  `http://localhost:<port>/api/telemetry?deviceId=uno-r4-003&packet=3&sort=asc`
 
 - **Paketintervall (t.ex. 2–5) för alla enheter med prefix:**  
   `http://localhost:<port>/api/telemetry?devicePrefix=uno-r4-&packetFrom=2&packetTo=5&sort=asc`
 
-```
-
-
-```
 ## Architecture (ASCII)
-
 ```
 [S_SensorNodes] --(BLE/WiFi)--> [C_ESP32_Gateway] --(MQTT)--> [W_WebServer] --(REST)--> [Dashboard]-->[Backend]
                                    \__________________________________________________________________________/
                                                        (Optional cloud: Azure IoT Hub/Event Hubs)
 ```
+## Simulatorer (två sätt)
+
+### A) Node one-liner (standalone REST-demo, utan MQTT)
+Spinnar upp en **egen mini-server** som exponerar `/health`, `/api/telemetry`, `/ingest` och **seedar data direkt via HTTP** till sig själv. Bra för **snabb demo** på vilken dator som helst – **ingen broker/hårdvara krävs**.
+
+- **Motsvarar i arkitekturen:** `[W_WebServer] --(REST)--> [Dashboard]`
+- **Använd när:** du vill visa API:t/UX snabbt, offline eller utan ESP32/UNO.
+- **Begränsningar:** ingen MQTT-kedja, data lagras i RAM (töms vid omstart).
+- **Verifiera:** öppna `http://localhost:<port>/health` och `…/api/telemetry?limit=100&sort=asc`.
+
+> Klistra in one-linern här under rubriken om du vill ha en “kör och visa”-demo.
+
+---
+
+### B) MQTT-seed (simulerade enheter via broker)
+Publicerar **100 enheter** (`uno-r4-001 … uno-r4-100`) till `sensors/<deviceId>` på en **MQTT-broker** (t.ex. aedes/Mosquitto). Din riktiga backend (`W_WebServer` i **MQTT-läge**) **subscribar** på `sensors/#` och exponerar datan via **REST**.
+
+- **Motsvarar i arkitekturen:**  
+  `[S_SensorNodes] --(WiFi/MQTT)--> [C_ESP32_Gateway/Broker] --(MQTT)--> [W_WebServer] --(REST)--> [Dashboard]`
+- **Använd när:** du vill **följa hela kedjan** och testa/labba med MQTT utan fysisk hårdvara.
+- **Krav:** en MQTT-broker kör (`:1883`) och `W_WebServer` kör med `USE_AZURE=false`, `MQTT_URL=mqtt://<broker-ip>:1883`, `MQTT_TOPIC=sensors/#`.
+- **Så gör du:** sätt `BROKER=<ip>`, kör seed-scriptet (publicerar 1 paket per enhet).
+- **Verifiera (REST i W_WebServer):**
+  - Alla: `http://localhost:<port>/api/telemetry?limit=100&sort=asc`
+  - Prefix: `…/api/telemetry?devicePrefix=uno-r4-&limit=50&sort=asc`
+  - En enhet: `…/api/telemetry?deviceId=uno-r4-002&limit=10&sort=asc`
+  - Paket: `…/api/telemetry?packet=3&sort=asc`
+
+> Klistra in ditt **MQTT-seed-block** här. Påminn om att ändra `BROKER` om brokern inte kör lokalt.
+
+---
+
+### Vilken ska jag välja?
+- **Vill du bara visa API/telemetri utan uppsättning?** → *Node one-liner (REST)*  
+- **Vill du efterlikna verkligt IoT-flöde?** → *MQTT-seed + W_WebServer i MQTT-läge*
+
+> Tips: kör **inte** båda samtidigt på samma port om du demar—håll isär *REST-demon* och den riktiga *MQTT-backenden*.
 
 ---
 
