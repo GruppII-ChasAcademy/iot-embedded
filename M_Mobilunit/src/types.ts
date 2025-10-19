@@ -1,19 +1,25 @@
-export interface Telemetry {
-  type: 'heartbeat';
+﻿export type Telemetry = {
   deviceId: string;
-  ts: number; // epoch seconds
+  ts: number;
   battery?: number;
-  gps?: { lat: number; lon: number };
-}
+  rssi?: number;
+  data?: Record<string, unknown>;
+};
 
-export interface ApiRequest {
-  method: 'GET' | 'POST';
-  path: string;
-  body?: any;
-}
+export type CommandPayload =
+  | { cmd: 'ping' }
+  | { cmd: 'echo'; message: string }
+  | { cmd: 'telemetry'; data: Record<string, unknown> };
 
-export interface ApiEnvelope {
-  corrId: string;
-  replyTo: string;
-  request: ApiRequest;
-}
+export type ApiRequest = {
+  op: string;
+  params?: Record<string, unknown>;
+  correlationId?: string;
+};
+
+export type ApiEnvelope<T = unknown> = {
+  ok: boolean;
+  data?: T;
+  error?: string;
+  correlationId?: string;
+};

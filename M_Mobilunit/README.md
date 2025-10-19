@@ -77,3 +77,7 @@ git push -u origin feat/mobileunit-mqtt
 # Skapa Pull Request mot main med titel:
 # "M_Mobilunit: Bekräfta MQTT-kommunikation och stänga ihop endpointen via MQTT"
 ```
+
+
+---
+_Updated: ESM, broker 1883, heartbeat/RPC, cmd-filter._
