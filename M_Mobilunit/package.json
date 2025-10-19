@@ -1,20 +1,22 @@
-{
+﻿{
   "name": "m_mobilunit",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
   "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "ts-node src/index.ts",
-    "build": "tsc -p .",
-    "start": "node dist/index.js"
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "broker": "node -r dotenv/config broker.mjs"
   },
   "dependencies": {
-    "mqtt": "^5.3.5",
+    "aedes": "^0.51.2",
     "dotenv": "^16.4.5",
-    "uuid": "^9.0.1"
+    "mqtt": "^5.10.1"
   },
   "devDependencies": {
+    "@types/node": "^20.12.12",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.9.3"
   }
 }
