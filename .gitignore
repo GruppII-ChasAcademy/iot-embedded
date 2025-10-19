@@ -14,3 +14,7 @@ W_WebServer/.env
 *.key
 *.pem
 *.log
+
+# M_Mobilunit
+M_Mobilunit/node_modules/
+M_Mobilunit/.env
